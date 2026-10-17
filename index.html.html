@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>组个队吧 · 校园组队神器</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  :root {
+    --brand: #7c3aed;
+    --brand-soft: #ede9fe;
+    --accent: #f59e0b;
+  }
+  * { -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #ede9fe 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #fef3c7 0%, transparent 55%),
+      #fafafa;
+    min-height: 100vh;
+  }
+  .glass {
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .card-hover { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+  .card-hover:hover { transform: translateY(-4px); box-shadow: 0 16px 40px -12px rgba(124,58,237,.25); border-color: #c4b5fd; }
+  .chip { transition: all .2s ease; }
+  .chip:hover { transform: translateY(-1px); }
+  .badge-pulse { animation: pulse 2.4s infinite; }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(124,58,237,.35); }
+    50% { box-shadow: 0 0 0 8px rgba(124,58,237,0); }
+  }
+  @keyframes floaty {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .floaty { animation: floaty 3s ease-in-out infinite; }
+  @keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+  .slide-in-right { animation: slideInRight .3s ease both; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .fade-in { animation: fadeIn .2s ease both; }
+  @keyframes popIn {
+    0% { opacity: 0; transform: scale(.9) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .pop-in { animation: popIn .28s cubic-bezier(.2,.9,.3,1.2) both; }
+  @keyframes shake {
+    0%,100% { transform: rotate(0); }
+    25% { transform: rotate(-8deg); }
+    75% { transform: rotate(8deg); }
+  }
+  .shake { animation: shake .5s ease; }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: #ddd6fe; border-radius: 3px; }
+  .tag-gradient { background: linear-gradient(135deg, #ede9fe, #fce7f3); }
+  .btn-primary {
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff;
+    transition: all .2s ease;
+  }
+  .btn-primary:hover { box-shadow: 0 8px 20px -6px rgba(124,58,237,.5); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .gradient-text {
+    background: linear-gradient(135deg, #7c3aed, #ec4899);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .emoji-avatar {
+    width: 56px; height: 56px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+  }
+  .emoji-avatar-lg { width: 84px; height: 84px; font-size: 44px; border-radius: 22px; }
+  .empty-state { opacity: .6; }
+</style>
+</head>
+<body class="text-slate-800">
+
+<!-- ============ 顶部导航 ============ -->
+<header class="sticky top-0 z-30 glass border-b border-violet-100">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-2">
+      <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-xl shadow-lg shadow-violet-200 floaty">🤝</div>
+      <div>
+        <h1 class="text-lg sm:text-xl font-extrabold gradient-text leading-none">组个队吧</h1>
+        <p class="text-[11px] text-slate-500 mt-0.5 hidden sm:block">校园活动 · 竞赛 · 作业组队神器</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="btnPublish" class="btn-primary px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 shadow">
+        <i data-lucide="plus" class="w-4 h-4"></i><span class="hidden sm:inline">发布我的信息</span><span class="sm:hidden">发布</span>
+      </button>
+      <button id="btnTeam" class="relative px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold bg-white border border-violet-200 text-violet-700 hover:bg-violet-50 transition flex items-center gap-1.5 shadow-sm">
+        <i data-lucide="users" class="w-4 h-4"></i><span class="hidden sm:inline">我的队伍</span><span class="sm:hidden">队伍</span>
+        <span id="teamCount" class="ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[11px] font-bold bg-fuchsia-500 text-white rounded-full hidden">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+
+  <!-- ============ Hero ============ -->
+  <section class="mb-6">
+    <div class="rounded-3xl bg-gradient-to-br from-violet-600 via-violet-500 to-fuchsia-500 p-6 sm:p-8 text-white relative overflow-hidden shadow-xl shadow-violet-200">
+      <div class="absolute -right-6 -top-6 text-8xl opacity-20 select-none">🚀</div>
+      <div class="absolute right-16 bottom-2 text-5xl opacity-20 select-none">🎯</div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold mb-2 relative">找到对的人，组队不踩坑 🎉</h2>
+      <p class="text-violet-100 text-sm sm:text-base mb-4 relative">按<strong class="text-white">参赛目的</strong>、<strong class="text-white">能力水平</strong>、<strong class="text-white">技能方向</strong>筛选，告别"被鸽"和"划水"，一起冲奖 / 一起体验 / 一起拿学分！</p>
+      <div class="flex flex-wrap gap-2 relative">
+        <span class="px-3 py-1 bg-white/20 rounded-full text-xs">⚡ 认真冲奖</span>
+        <span class="px-3 py-1 bg-white/20 rounded-full text-xs">🌈 体验参与</span>
+        <span class="px-3 py-1 bg-white/20 rounded-full text-xs">📚 萌新成长</span>
+        <span class="px-3 py-1 bg-white/20 rounded-full text-xs">🎨 全栈 / 设计 / 算法</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 活动选择 ============ -->
+  <section class="mb-6">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-bold text-slate-700 flex items-center gap-2"><i data-lucide="calendar-check" class="w-5 h-5 text-violet-500"></i>选择活动</h3>
+      <span class="text-xs text-slate-400">切换活动查看不同的待组队同学</span>
+    </div>
+    <div id="activityTabs" class="flex gap-3 overflow-x-auto pb-2 scrollbar-thin"></div>
+  </section>
+
+  <!-- ============ 筛选 + 搜索 ============ -->
+  <section class="mb-6 bg-white rounded-2xl p-4 border border-violet-100 shadow-sm">
+    <div class="flex flex-col lg:flex-row gap-3 mb-4">
+      <div class="relative flex-1">
+        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+        <input id="searchInput" type="text" placeholder="搜索姓名 / 学校 / 技能 / 简介..." class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none text-sm transition" />
+      </div>
+      <button id="btnReset" class="px-4 py-2.5 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-100 transition flex items-center justify-center gap-1.5 border border-slate-200">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>重置筛选
+      </button>
+    </div>
+
+    <div class="space-y-3">
+      <!-- 参赛目的 -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-semibold text-slate-500 w-16 shrink-0">参赛目的</span>
+        <div class="flex flex-wrap gap-2" id="filterPurpose"></div>
+      </div>
+      <!-- 能力水平 -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-semibold text-slate-500 w-16 shrink-0">能力水平</span>
+        <div class="flex flex-wrap gap-2" id="filterLevel"></div>
+      </div>
+      <!-- 技能方向 -->
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-semibold text-slate-500 w-16 shrink-0">技能方向</span>
+        <div class="flex flex-wrap gap-2" id="filterSkill"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 统计 + 卡片网格 ============ -->
+  <section>
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-bold text-slate-700 flex items-center gap-2">
+        <i data-lucide="sparkles" class="w-5 h-5 text-amber-500"></i>
+        <span id="activityTitle">全部活动</span> · 待组队同学
+      </h3>
+      <span id="resultCount" class="text-sm text-slate-500">共 0 人</span>
+    </div>
+    <div id="cardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <div id="emptyState" class="hidden text-center py-16 empty-state">
+      <div class="text-6xl mb-3">🔍</div>
+      <p class="text-slate-500 font-medium">没有找到符合条件的同学</p>
+      <p class="text-slate-400 text-sm mt-1">试试调整筛选条件，或者发布自己的信息吧～</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="max-w-7xl mx-auto px-4 sm:px-6 py-8 text-center text-xs text-slate-400">
+  <p>组个队吧 · Demo 演示版 💜 所有数据为本地模拟，刷新即重置</p>
+</footer>
+
+<!-- ============ 人员详情弹窗 ============ -->
+<div id="detailModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/40 fade-in">
+  <div class="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-thin pop-in shadow-2xl">
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<!-- ============ 我的队伍抽屉 ============ -->
+<div id="teamDrawer" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/40 fade-in" data-close-team></div>
+  <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl slide-in-right flex flex-col">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+      <h3 class="text-lg font-extrabold text-slate-800 flex items-center gap-2">🏆 我的队伍</h3>
+      <button data-close-team class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div id="teamBody" class="flex-1 overflow-y-auto scrollbar-thin p-5"></div>
+    <div class="p-4 border-t border-slate-100 bg-slate-50">
+      <div class="flex items-center justify-between text-sm mb-2">
+        <span class="text-slate-500">队伍人数</span>
+        <span class="font-bold text-violet-600"><span id="teamNum">0</span> 人</span>
+      </div>
+      <button id="btnDisband" class="w-full py-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 text-sm font-medium transition">解散队伍</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 发布信息弹窗 ============ -->
+<div id="publishModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/40 fade-in">
+  <div class="bg-white rounded-3xl w-full max-w-lg max-h-[92vh] overflow-y-auto scrollbar-thin pop-in shadow-2xl">
+    <div class="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white rounded-t-3xl">
+      <h3 class="text-lg font-extrabold text-slate-800 flex items-center gap-2">📣 发布我的组队信息</h3>
+      <button data-close-publish class="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <form id="publishForm" class="p-5 space-y-4">
+      <div>
+        <label class="text-sm font-semibold text-slate-700 block mb-1.5">我的形象</label>
+        <div class="flex flex-wrap gap-2" id="avatarPicker"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm font-semibold text-slate-700 block mb-1.5">昵称</label>
+          <input name="name" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none text-sm" placeholder="例如：代码小能手" />
+        </div>
+        <div>
+          <label class="text-sm font-semibold text-slate-700 block mb-1.5">学校 / 专业</label>
+          <input name="school" required class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none text-sm" placeholder="例如：XX大学 计科" />
+        </div>
+      </div>
+      <div>
+        <label class="text-sm font-semibold text-slate-700 block mb-1.5">一句话简介</label>
+        <input name="bio" required maxlength="40" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none text-sm" placeholder="例如：会写会画，认真不划水" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm font-semibold text-slate-700 block mb-1.5">参赛目的</label>
+          <select name="purpose" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-violet-400 outline-none text-sm bg-white">
+            <option value="serious">⚡ 认真冲奖</option>
+            <option value="experience">🌈 体验参与</option>
+            <option value="credit">📚 完成学分</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm font-semibold text-slate-700 block mb-1.5">能力水平</label>
+          <select name="level" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-violet-400 outline-none text-sm bg-white">
+            <option value="expert">🚀 大佬带飞</option>
+            <option value="intermediate">⚖️ 均衡发展</option>
+            <option value="beginner">🌱 萌新求带</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="text-sm font-semibold text-slate-700 block mb-1.5">技能标签（用空格或逗号分隔）</label>
+        <input name="skills" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 outline-none text-sm" placeholder="例如：前端 React UI设计" />
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-sm font-semibold text-slate-700 block mb-1.5">微信</label>
+          <input name="wechat" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-violet-400 outline-none text-sm" placeholder="wxid_xxx" />
+        </div>
+        <div>
+          <label class="text-sm font-semibold text-slate-700 block mb-1.5">邮箱</label>
+          <input name="email" type="email" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-violet-400 outline-none text-sm" placeholder="you@example.com" />
+        </div>
+      </div>
+      <div>
+        <label class="text-sm font-semibold text-slate-700 block mb-1.5">想找什么样的队友（选填）</label>
+        <input name="looking" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:border-violet-400 outline-none text-sm" placeholder="例如：会后端 / 会做PPT" />
+      </div>
+      <button type="submit" class="btn-primary w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+        <i data-lucide="rocket" class="w-4 h-4"></i> 发布组队信息
+      </button>
+      <p class="text-xs text-slate-400 text-center">💡 Demo 演示：发布后仅在本次会话临时展示，刷新页面即重置</p>
+    </form>
+  </div>
+</div>
+
+<!-- ============ Toast ============ -->
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] hidden">
+  <div class="glass border border-violet-200 text-violet-700 px-5 py-2.5 rounded-full shadow-lg font-semibold text-sm flex items-center gap-2"></div>
+</div>
+
+<script>
+/* ============================================================
+   数据模型（本地 mock，刷新重置）
+   ============================================================ */
+const ACTIVITIES = [
+  { id: 'hackathon', name: '校园黑客松', emoji: '💻', desc: '48小时极限开发，组队冲奖！' },
+  { id: 'course', name: '课程大作业', emoji: '📖', desc: '专业课小组作业，靠谱不划水' },
+  { id: 'competition', name: '学科竞赛', emoji: '🏆', desc: '互联网+ / 挑战杯 / ACM 等' },
+  { id: 'club', name: '社团招新', emoji: '🎨', desc: '社团活动组队，兴趣相投' },
+];
+
+const PURPOSE_MAP = {
+  serious:    { label: '认真冲奖', emoji: '⚡', color: 'bg-rose-100 text-rose-600 border-rose-200' },
+  experience: { label: '体验参与', emoji: '🌈', color: 'bg-sky-100 text-sky-600 border-sky-200' },
+  credit:     { label: '完成学分', emoji: '📚', color: 'bg-amber-100 text-amber-600 border-amber-200' },
+};
+const LEVEL_MAP = {
+  expert:       { label: '大佬带飞', emoji: '🚀', color: 'bg-violet-100 text-violet-600 border-violet-200' },
+  intermediate: { label: '均衡发展', emoji: '⚖️', color: 'bg-emerald-100 text-emerald-600 border-emerald-200' },
+  beginner:     { label: '萌新求带', emoji: '🌱', color: 'bg-lime-100 text-lime-600 border-lime-200' },
+};
+const SKILL_MAP = {
+  frontend: { label: '前端', emoji: '🎨' },
+  backend:  { label: '后端', emoji: '⚙️' },
+  design:   { label: '设计', emoji: '🖌️' },
+  product:  { label: '产品', emoji: '📋' },
+  algo:     { label: '算法', emoji: '🧮' },
+  data:     { label: '数据', emoji: '📊' },
+  hardware: { label: '硬件', emoji: '🔧' },
+  writing:  { label: '文案', emoji: '✍️' },
+};
+const AVATARS = ['🦊','🐼','🦁','🐯','🐨','🐸','🐵','🦉','🐺','🐧','🐙','🦄','🐝','🦋','🐢','🐳','🦩','🐲','🐰','🐻'];
+
+const PEOPLE = [
+  { id:1, name:'林小柚', avatar:'🦊', school:'清华大学 计算机', bio:'全栈选手，认真冲奖不划水 🔥', purpose:'serious', level:'expert',
+    skills:['frontend','backend','algo'], experience:['2025 互联网+ 国赛银奖','2024 ACM 区域赛铜奖','3段大厂实习'],
+    contact:{wechat:'linxiaoyou_2026', email:'linxy@tsinghua.edu.cn'}, looking:'需要一个会做UI设计的小伙伴' },
+  { id:2, name:'阿橘', avatar:'🐼', school:'北京大学 设计', bio:'视觉+交互设计，作品集很能打 🎨', purpose:'serious', level:'expert',
+    skills:['design','product'], experience:['红点设计奖入围','5个上线产品UI设计','擅长Figma+动效'],
+    contact:{wechat:'aju_design', email:'aju@pku.edu.cn'}, looking:'找技术大佬一起落地作品' },
+  { id:3, name:'王大锤', avatar:'🐯', school:'浙江大学 软件工程', bio:'Java后端，能扛能打，绝不鸽 🛠️', purpose:'serious', level:'intermediate',
+    skills:['backend','data'], experience:['SpringBoot项目3个','阿里云ACP认证','校赛一等奖'],
+    contact:{wechat:'dachui_java', email:'dachui@zju.edu.cn'}, looking:'缺前端和设计' },
+  { id:4, name:'喵喵', avatar:'🐱', school:'复旦大学 新闻', bio:'文案+PPT天花板，答辩稳了 ✍️', purpose:'experience', level:'intermediate',
+    skills:['writing','product'], experience:['校园新媒体主编','多次负责路演PPT','校级演讲比赛冠军'],
+    contact:{wechat:'miao_pptx', email:'miao@fudan.edu.cn'}, looking:'想体验黑客松，求技术带带' },
+  { id:5, name:'李小白', avatar:'🐰', school:'上海交大 大一', bio:'萌新一枚，想学东西，超级听话 🌱', purpose:'credit', level:'beginner',
+    skills:['frontend'], experience:['学过HTML/CSS','Python入门','做过课程小项目'],
+    contact:{wechat:'xiaobai_learn', email:'xiaobai@sjtu.edu.cn'}, looking:'求大佬带飞，干啥都行' },
+  { id:6, name:'陈算法', avatar:'🦉', school:'中科大 数学', bio:'算法竞赛选手，ACM银，专治难题 🧮', purpose:'serious', level:'expert',
+    skills:['algo','backend'], experience:['ICPC区域赛银牌','蓝桥杯国一','3篇EI论文在投'],
+    contact:{wechat:'chen_algo', email:'chen@ustc.edu.cn'}, looking:'需要工程能力强的队友' },
+  { id:7, name:'苏小糖', avatar:'🐻', school:'南京大学 传媒', bio:'视频剪辑+新媒体运营，流量密码 📹', purpose:'experience', level:'intermediate',
+    skills:['design','writing'], experience:['B站10万粉up主','短视频播放量500w+','擅长内容策划'],
+    contact:{wechat:'sugar_video', email:'sugar@nju.edu.cn'}, looking:'想做有趣的项目，体验为主' },
+  { id:8, name:'赵硬件', avatar:'🐺', school:'哈工大 电子', bio:'嵌入式+硬件电路，焊板子小能手 🔧', purpose:'serious', level:'intermediate',
+    skills:['hardware','backend'], experience:['电赛国二','智能车竞赛一等奖','熟悉STM32/ESP32'],
+    contact:{wechat:'zhao_hw', email:'zhao@hit.edu.cn'}, looking:'找会做App/前端的同学' },
+  { id:9, name:'周数据', avatar:'🐨', school:'人大 统计', bio:'数据分析+可视化，讲故事高手 📊', purpose:'serious', level:'expert',
+    skills:['data','algo'], experience:['Kaggle Master','数学建模国一','Python/SQL/R全栈'],
+    contact:{wechat:'zhou_data', email:'zhou@ruc.edu.cn'}, looking:'需要产品+设计把方案落地' },
+  { id:10, name:'吴前端', avatar:'🐸', school:'北航 软工', bio:'React/Vue 熟练，追求像素级还原 🎯', purpose:'experience', level:'intermediate',
+    skills:['frontend','design'], experience:['3个开源项目贡献者','前端工程化熟练','会一点Three.js'],
+    contact:{wechat:'wu_fe', email:'wu@buaa.edu.cn'}, looking:'体验为主，想做点酷的东西' },
+  { id:11, name:'郑产品', avatar:'🐵', school:'同济 工业设计', bio:'产品经理思维，用户调研+原型 📋', purpose:'serious', level:'intermediate',
+    skills:['product','design'], experience:['实习产品经理','主导2个从0到1产品','Axure/墨刀熟练'],
+    contact:{wechat:'zheng_pm', email:'zheng@tongji.edu.cn'}, looking:'需要技术合伙人' },
+  { id:12, name:'小透明', avatar:'🐧', school:'武大 大二', bio:'啥都想学，时间充裕随叫随到 ⏰', purpose:'credit', level:'beginner',
+    skills:['writing'], experience:['学生会宣传干事','会做海报','积极向上不划水'],
+    contact:{wechat:'xiaotom', email:'tom@whu.edu.cn'}, looking:'求带，刷学分' },
+];
+
+// 给每个人分配参与的活动（多对多）
+const ACTIVITY_PEOPLE = {
+  hackathon:   [1,2,3,4,6,7,8,9,10,11],
+  course:      [1,3,5,10,11,12,2,9],
+  competition: [1,2,3,6,8,9,11],
+  club:        [4,5,7,10,12,2],
+};
+
+/* ============================================================
+   状态
+   ============================================================ */
+const state = {
+  activity: 'hackathon',
+  search: '',
+  filters: { purpose: null, level: null, skill: null },
+  myTeam: [],            // 我的队伍（person id 列表）
+  customPeople: [],      // 用户发布的临时人员
+  selectedAvatar: AVATARS[0],
+};
+
+/* ============================================================
+   工具函数
+   ============================================================ */
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+
+function getPeopleForActivity(actId) {
+  const ids = ACTIVITY_PEOPLE[actId] || [];
+  const base = PEOPLE.filter(p => ids.includes(p.id));
+  // 自定义发布的人默认出现在所有活动
+  return [...state.customPeople, ...base];
+}
+
+function allPeople() {
+  return [...state.customPeople, ...PEOPLE];
+}
+
+function getPerson(id) {
+  return allPeople().find(p => p.id === id);
+}
+
+function toast(msg, emoji='✅') {
+  const t = $('#toast');
+  t.firstElementChild.innerHTML = `<span>${emoji}</span><span>${msg}</span>`;
+  t.classList.remove('hidden');
+  t.classList.add('pop-in');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { t.classList.add('hidden'); t.classList.remove('pop-in'); }, 2200);
+}
+
+/* ============================================================
+   渲染：活动 Tabs
+   ============================================================ */
+function renderActivities() {
+  const wrap = $('#activityTabs');
+  wrap.innerHTML = ACTIVITIES.map(a => {
+    const active = state.activity === a.id;
+    const count = (ACTIVITY_PEOPLE[a.id] || []).length + state.customPeople.length;
+    return `
+      <button data-act="${a.id}" class="activity-tab shrink-0 px-4 py-3 rounded-2xl border transition flex items-center gap-2.5 text-left min-w-[180px] ${active ? 'bg-violet-600 text-white border-violet-600 shadow-lg shadow-violet-200' : 'bg-white border-slate-200 hover:border-violet-300 card-hover'}">
+        <span class="text-2xl">${a.emoji}</span>
+        <div>
+          <div class="font-bold text-sm">${a.name}</div>
+          <div class="text-[11px] ${active ? 'text-violet-100' : 'text-slate-400'}">${count} 人待组队</div>
+        </div>
+      </button>`;
+  }).join('');
+  $$('.activity-tab').forEach(btn => {
+    btn.onclick = () => { state.activity = btn.dataset.act; renderAll(); };
+  });
+}
+
+/* ============================================================
+   渲染：筛选 chips
+   ============================================================ */
+function renderFilters() {
+  const purposeHtml = renderChipGroup('purpose', PURPOSE_MAP, state.filters.purpose);
+  const levelHtml = renderChipGroup('level', LEVEL_MAP, state.filters.level);
+  const skillHtml = Object.entries(SKILL_MAP).map(([k,v]) => {
+    const active = state.filters.skill === k;
+    return `<button data-skill="${k}" class="chip px-3 py-1 rounded-full text-xs font-medium border transition ${active ? 'bg-violet-600 text-white border-violet-600' : 'bg-white border-slate-200 text-slate-600 hover:border-violet-300'}">${v.emoji} ${v.label}</button>`;
+  }).join('');
+  $('#filterPurpose').innerHTML = purposeHtml;
+  $('#filterLevel').innerHTML = levelHtml;
+  $('#filterSkill').innerHTML = skillHtml;
+
+  $$('[data-purpose]').forEach(b => b.onclick = () => toggleFilter('purpose', b.dataset.purpose));
+  $$('[data-level]').forEach(b => b.onclick = () => toggleFilter('level', b.dataset.level));
+  $$('[data-skill]').forEach(b => b.onclick = () => toggleFilter('skill', b.dataset.skill));
+}
+
+function renderChipGroup(key, map, activeVal) {
+  return Object.entries(map).map(([k,v]) => {
+    const active = activeVal === k;
+    return `<button data-${key}="${k}" class="chip px-3 py-1 rounded-full text-xs font-medium border transition ${active ? v.color + ' ring-2 ring-offset-1 ring-current' : 'bg-white border-slate-200 text-slate-600 hover:border-violet-300'}">${v.emoji} ${v.label}</button>`;
+  }).join('');
+}
+
+function toggleFilter(key, val) {
+  state.filters[key] = state.filters[key] === val ? null : val;
+  renderFilters();
+  renderCards();
+}
+
+/* ============================================================
+   渲染：人员卡片
+   ============================================================ */
+function renderCards() {
+  const people = getPeopleForActivity(state.activity);
+  const f = state.filters;
+  const kw = state.search.trim().toLowerCase();
+
+  const list = people.filter(p => {
+    if (f.purpose && p.purpose !== f.purpose) return false;
+    if (f.level && p.level !== f.level) return false;
+    if (f.skill && !p.skills.includes(f.skill)) return false;
+    if (kw) {
+      const hay = [p.name, p.school, p.bio, ...(p.skills.map(s=>SKILL_MAP[s]?.label||''))].join(' ').toLowerCase();
+      if (!hay.includes(kw)) return false;
+    }
+    return true;
+  });
+
+  $('#resultCount').textContent = `共 ${list.length} 人`;
+  const act = ACTIVITIES.find(a => a.id === state.activity);
+  $('#activityTitle').textContent = act ? act.name : '全部活动';
+
+  const grid = $('#cardGrid');
+  $('#emptyState').classList.toggle('hidden', list.length > 0);
+  grid.innerHTML = list.map(p => personCard(p)).join('');
+  bindCardEvents();
+}
+
+function personCard(p) {
+  const purpose = PURPOSE_MAP[p.purpose];
+  const level = LEVEL_MAP[p.level];
+  const inTeam = state.myTeam.includes(p.id);
+  const skillsHtml = p.skills.map(s => {
+    const sk = SKILL_MAP[s];
+    return sk ? `<span class="tag-gradient px-2 py-0.5 rounded-md text-[11px] font-medium text-violet-700 border border-violet-100">${sk.emoji} ${sk.label}</span>` : '';
+  }).join('');
+
+  return `
+    <div class="person-card bg-white rounded-2xl p-4 border border-slate-100 card-hover relative" data-id="${p.id}">
+      ${inTeam ? `<span class="absolute top-3 right-3 text-[10px] bg-fuchsia-500 text-white px-2 py-0.5 rounded-full font-bold badge-pulse">已组队</span>` : ''}
+      <div class="flex items-start gap-3 mb-3">
+        <div class="emoji-avatar shrink-0">${p.avatar}</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <h4 class="font-bold text-slate-800 truncate">${p.name}</h4>
+          </div>
+          <p class="text-[11px] text-slate-500 truncate">${p.school}</p>
+          <p class="text-xs text-slate-600 mt-1 line-clamp-2">${p.bio}</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-1.5 mb-3">${skillsHtml}</div>
+      <div class="flex flex-wrap gap-1.5 mb-3">
+        <span class="px-2 py-0.5 rounded-md text-[11px] font-medium border ${purpose.color}">${purpose.emoji} ${purpose.label}</span>
+        <span class="px-2 py-0.5 rounded-md text-[11px] font-medium border ${level.color}">${level.emoji} ${level.label}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn-detail flex-1 py-2 rounded-xl text-xs font-semibold bg-violet-50 text-violet-600 hover:bg-violet-100 transition flex items-center justify-center gap-1" data-id="${p.id}">
+          <i data-lucide="user" class="w-3.5 h-3.5"></i>详情
+        </button>
+        <button class="btn-contact px-3 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition flex items-center justify-center gap-1" data-id="${p.id}" title="联系方式">
+          <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>联系
+        </button>
+        <button class="btn-invite px-3 py-2 rounded-xl text-xs font-semibold ${inTeam ? 'bg-fuchsia-100 text-fuchsia-600' : 'btn-primary'} flex items-center justify-center gap-1" data-id="${p.id}">
+          <i data-lucide="${inTeam ? 'user-minus' : 'user-plus'}" class="w-3.5 h-3.5"></i>${inTeam ? '移出' : '组队'}
+        </button>
+      </div>
+    </div>`;
+}
+
+function bindCardEvents() {
+  $$('.btn-detail').forEach(b => b.onclick = () => openDetail(+b.dataset.id));
+  $$('.btn-contact').forEach(b => b.onclick = () => openContact(+b.dataset.id));
+  $$('.btn-invite').forEach(b => b.onclick = () => toggleTeam(+b.dataset.id));
+}
+
+/* ============================================================
+   详情弹窗
+   ============================================================ */
+function openDetail(id) {
+  const p = getPerson(id);
+  if (!p) return;
+  const purpose = PURPOSE_MAP[p.purpose];
+  const level = LEVEL_MAP[p.level];
+  const inTeam = state.myTeam.includes(p.id);
+  const skillsHtml = p.skills.map(s => {
+    const sk = SKILL_MAP[s];
+    return sk ? `<span class="tag-gradient px-3 py-1 rounded-lg text-sm font-medium text-violet-700 border border-violet-100">${sk.emoji} ${sk.label}</span>` : '';
+  }).join('');
+  const expHtml = p.experience.map(e => `<li class="flex items-start gap-2 text-sm text-slate-600"><span class="text-violet-400 mt-1">▸</span><span>${e}</span></li>`).join('');
+
+  $('#detailContent').innerHTML = `
+    <div class="bg-gradient-to-br from-violet-500 to-fuchsia-500 p-6 text-white relative rounded-t-3xl">
+      <button data-close-detail class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4"></i></button>
+      <div class="flex items-center gap-4">
+        <div class="emoji-avatar emoji-avatar-lg bg-white/20">${p.avatar}</div>
+        <div>
+          <h3 class="text-2xl font-extrabold">${p.name}</h3>
+          <p class="text-violet-100 text-sm">${p.school}</p>
+          <p class="text-white/90 mt-1">${p.bio}</p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-4">
+        <span class="px-3 py-1 rounded-full bg-white/25 text-sm font-medium">${purpose.emoji} ${purpose.label}</span>
+        <span class="px-3 py-1 rounded-full bg-white/25 text-sm font-medium">${level.emoji} ${level.label}</span>
+      </div>
+    </div>
+    <div class="p-6 space-y-5">
+      <div>
+        <h4 class="font-bold text-slate-700 mb-2 flex items-center gap-1.5"><i data-lucide="wrench" class="w-4 h-4 text-violet-500"></i>技能方向</h4>
+        <div class="flex flex-wrap gap-2">${skillsHtml}</div>
+      </div>
+      <div>
+        <h4 class="font-bold text-slate-700 mb-2 flex items-center gap-1.5"><i data-lucide="award" class="w-4 h-4 text-amber-500"></i>履历 / 经历</h4>
+        <ul class="space-y-1.5">${expHtml}</ul>
+      </div>
+      <div>
+        <h4 class="font-bold text-slate-700 mb-2 flex items-center gap-1.5"><i data-lucide="search" class="w-4 h-4 text-sky-500"></i>想找的队友</h4>
+        <p class="text-sm text-slate-600 bg-slate-50 rounded-xl p-3 border border-slate-100">${p.looking || '暂无特别要求，欢迎来撩～'}</p>
+      </div>
+      <div>
+        <h4 class="font-bold text-slate-700 mb-2 flex items-center gap-1.5"><i data-lucide="contact" class="w-4 h-4 text-emerald-500"></i>联系方式</h4>
+        <div class="space-y-2">
+          ${p.contact.wechat ? `<div class="flex items-center justify-between bg-green-50 border border-green-100 rounded-xl px-3 py-2"><span class="text-sm text-slate-600 flex items-center gap-2"><span class="text-green-600">💬</span>微信</span><span class="text-sm font-mono font-semibold text-green-700">${p.contact.wechat}</span></div>` : ''}
+          ${p.contact.email ? `<div class="flex items-center justify-between bg-blue-50 border border-blue-100 rounded-xl px-3 py-2"><span class="text-sm text-slate-600 flex items-center gap-2"><span>📧</span>邮箱</span><span class="text-sm font-mono font-semibold text-blue-700">${p.contact.email}</span></div>` : ''}
+        </div>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button data-close-detail class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold text-sm">关闭</button>
+        <button class="btn-invite-detail btn-primary flex-1 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-1.5" data-id="${p.id}">
+          <i data-lucide="${inTeam ? 'user-minus' : 'user-plus'}" class="w-4 h-4"></i>${inTeam ? '移出队伍' : '邀请组队'}
+        </button>
+      </div>
+    </div>`;
+
+  const modal = $('#detailModal');
+  modal.classList.remove('hidden'); modal.classList.add('flex');
+  $$('[data-close-detail]').forEach(b => b.onclick = closeDetail);
+  $('.btn-invite-detail').onclick = () => { toggleTeam(+p.id); closeDetail(); };
+  modal.onclick = (e) => { if (e.target === modal) closeDetail(); };
+  lucide.createIcons();
+}
+function closeDetail() {
+  const m = $('#detailModal');
+  m.classList.add('hidden'); m.classList.remove('flex');
+}
+
+function openContact(id) {
+  const p = getPerson(id);
+  if (!p) return;
+  let lines = [];
+  if (p.contact.wechat) lines.push(`微信：${p.contact.wechat}`);
+  if (p.contact.email) lines.push(`邮箱：${p.contact.email}`);
+  if (p.contact.phone) lines.push(`电话：${p.contact.phone}`);
+  if (!lines.length) lines.push('TA 还没有留下联系方式～');
+  toast(`${p.name} 的联系方式：${lines.join(' | ')}`, '📞');
+}
+
+/* ============================================================
+   队伍管理
+   ============================================================ */
+function toggleTeam(id) {
+  const p = getPerson(id);
+  if (!p) return;
+  const idx = state.myTeam.indexOf(id);
+  if (idx >= 0) {
+    state.myTeam.splice(idx, 1);
+    toast(`已将 ${p.name} 移出队伍`, '👋');
+  } else {
+    state.myTeam.push(id);
+    toast(`已邀请 ${p.name} 加入队伍！`, '🎉');
+  }
+  updateTeamUI();
+  renderCards();
+}
+
+function updateTeamUI() {
+  const n = state.myTeam.length;
+  const badge = $('#teamCount');
+  badge.textContent = n;
+  badge.classList.toggle('hidden', n === 0);
+  $('#teamNum').textContent = n;
+
+  const body = $('#teamBody');
+  if (n === 0) {
+    body.innerHTML = `
+      <div class="text-center py-12 empty-state">
+        <div class="text-6xl mb-3">🤷</div>
+        <p class="text-slate-500 font-medium">队伍还空空的</p>
+        <p class="text-slate-400 text-sm mt-1">去列表里找到对的人，点击"组队"吧～</p>
+      </div>`;
+    return;
+  }
+  body.innerHTML = state.myTeam.map(id => {
+    const p = getPerson(id);
+    if (!p) return '';
+    const purpose = PURPOSE_MAP[p.purpose];
+    const skillsHtml = p.skills.slice(0,3).map(s => SKILL_MAP[s] ? `${SKILL_MAP[s].emoji}` : '').join(' ');
+    return `
+      <div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 bg-slate-50/50 mb-2">
+        <div class="emoji-avatar" style="width:44px;height:44px;font-size:22px;border-radius:12px;">${p.avatar}</div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="font-bold text-sm">${p.name}</span>
+            <span class="text-[10px] ${purpose.color} px-1.5 py-0.5 rounded border">${purpose.emoji}</span>
+          </div>
+          <p class="text-[11px] text-slate-500 truncate">${p.school}</p>
+          <p class="text-[11px] text-slate-400">${skillsHtml}</p>
+        </div>
+        <button class="btn-remove-team w-8 h-8 rounded-full hover:bg-rose-50 text-slate-400 hover:text-rose-500 flex items-center justify-center" data-id="${id}">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>`;
+  }).join('');
+  $$('.btn-remove-team').forEach(b => b.onclick = () => toggleTeam(+b.dataset.id));
+  lucide.createIcons();
+}
+
+function openTeam() {
+  $('#teamDrawer').classList.remove('hidden');
+  updateTeamUI();
+}
+function closeTeam() {
+  $('#teamDrawer').classList.add('hidden');
+}
+
+/* ============================================================
+   发布信息
+   ============================================================ */
+function renderAvatarPicker() {
+  $('#avatarPicker').innerHTML = AVATARS.map(a =>
+    `<button type="button" data-avatar="${a}" class="w-10 h-10 rounded-xl text-xl flex items-center justify-center transition ${state.selectedAvatar===a ? 'bg-violet-100 ring-2 ring-violet-500' : 'bg-slate-100 hover:bg-slate-200'}">${a}</button>`
+  ).join('');
+  $$('[data-avatar]').forEach(b => b.onclick = () => {
+    state.selectedAvatar = b.dataset.avatar;
+    renderAvatarPicker();
+  });
+}
+
+function openPublish() {
+  renderAvatarPicker();
+  $('#publishModal').classList.remove('hidden');
+  $('#publishModal').classList.add('flex');
+}
+function closePublish() {
+  $('#publishModal').classList.add('hidden');
+  $('#publishModal').classList.remove('flex');
+  $('#publishForm').reset();
+}
+
+$('#publishForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const skillsRaw = (fd.get('skills') || '').toString().trim();
+  const skillKeys = skillsRaw ? parseSkills(skillsRaw) : [];
+  const person = {
+    id: Date.now(),
+    name: fd.get('name').toString(),
+    avatar: state.selectedAvatar,
+    school: fd.get('school').toString(),
+    bio: fd.get('bio').toString(),
+    purpose: fd.get('purpose').toString(),
+    level: fd.get('level').toString(),
+    skills: skillKeys,
+    experience: ['新发布 · 等待队友来撩 ✨'],
+    contact: { wechat: fd.get('wechat').toString(), email: fd.get('email').toString() },
+    looking: fd.get('looking').toString() || '欢迎来撩～',
+  };
+  state.customPeople.unshift(person);
+  toast('发布成功！已出现在列表顶部 🎉');
+  closePublish();
+  renderAll();
+});
+
+function parseSkills(raw) {
+  // 用户输入文字，映射到 SKILL_MAP 的 key
+  const map = {
+    '前端':'frontend','frontend':'frontend','web':'frontend','页面':'frontend','react':'frontend','vue':'frontend','html':'frontend','css':'frontend',
+    '后端':'backend','backend':'backend','服务端':'backend','java':'backend','python':'backend','node':'backend',
+    '设计':'design','ui':'design','ux':'design','视觉':'design','美工':'design','ps':'design','figma':'design',
+    '产品':'product','pm':'product','产品经理':'product',
+    '算法':'algo','算法':'algo','算法竞赛':'algo','acm':'algo','机器学习':'algo','ai':'algo',
+    '数据':'data','数据分析':'data','sql':'data','大数据':'data',
+    '硬件':'hardware','嵌入式':'hardware','电路':'hardware','单片机':'hardware',
+    '文案':'writing','写作':'writing','剪辑':'writing','视频':'writing',
+  };
+  const tokens = raw.toLowerCase().split(/[\s,，、]+/).filter(Boolean);
+  const set = new Set();
+  tokens.forEach(t => { if (map[t]) set.add(map[t]); });
+  // 如果没匹配到，给个默认前端
+  return set.size ? [...set] : ['frontend'];
+}
+
+/* ============================================================
+   重置 & 搜索
+   ============================================================ */
+$('#btnReset').onclick = () => {
+  state.search = '';
+  state.filters = { purpose: null, level: null, skill: null };
+  $('#searchInput').value = '';
+  renderFilters();
+  renderCards();
+  toast('筛选已重置', '🔄');
+};
+$('#searchInput').addEventListener('input', e => {
+  state.search = e.target.value;
+  renderCards();
+});
+$('#btnTeam').onclick = openTeam;
+$('#btnPublish').onclick = openPublish;
+$('#btnDisband').onclick = () => {
+  if (state.myTeam.length === 0) { toast('队伍已经是空的啦', '🤷'); return; }
+  state.myTeam = [];
+  toast('队伍已解散', '💔');
+  updateTeamUI();
+  renderCards();
+};
+$$('[data-close-team]').forEach(b => b.onclick = closeTeam);
+$$('[data-close-publish]').forEach(b => b.onclick = closePublish);
+
+/* 全局关闭：背景点击 */
+$('#publishModal').addEventListener('click', e => { if (e.target.id === 'publishModal') closePublish(); });
+$('#teamDrawer').addEventListener('click', e => { if (e.target.id === 'teamDrawer') closeTeam(); });
+
+/* ============================================================
+   初始化
+   ============================================================ */
+function renderAll() {
+  renderActivities();
+  renderFilters();
+  renderCards();
+  updateTeamUI();
+  lucide.createIcons();
+}
+renderAll();
+</script>
+</body>
+</html>
